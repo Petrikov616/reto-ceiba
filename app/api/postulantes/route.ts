@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 
-// "Base de datos" temporal en la memoria del servidor para simular a BUK
 let postulantesEnBuk: any[] = [];
 
 export async function GET() {
-// Endpoint para que el frontend consulte qué candidatos ya están en BUK
 return NextResponse.json({ success: true, postulantes: postulantesEnBuk });
 }
 
@@ -12,33 +10,49 @@ export async function POST(request: Request) {
 try {
 const body = await request.json();
 
-if (!body.email || !body.nombreCompleto || !body.vacanteId) {
+// Extraer campos con valores por defecto si vienen vacíos
+const nombres = body.nombres || 'Candidato';
+const apellidos = body.apellidos || 'Sin Apellido';
+const email = body.email;
+const telefono = body.telefono || body.celular || 'Sin número';
+const vacanteId = body.vacanteId || 'VAC-01';
+const pais = body.pais || 'Colombia';
+const ciudad = body.ciudad || 'Medellín';
+const cvUrl = body.enlaceCv || body.cv_url || 'https://ejemplo.com/cv.pdf';
+const perfilLinkedin = body.perfilLinkedin || 'No proporcionado';
+
+// La única validación estricta será el correo
+if (!email) {
     return NextResponse.json(
-    { success: false, message: 'Faltan campos obligatorios' },
+    { success: false, message: 'El correo electrónico es obligatorio (llave única)' },
     { status: 400 }
     );
 }
 
-// 1. Transformar los datos como lo exigiría BUK
+// Objeto estructurado bajo el contrato BUK
 const nuevoCandidatoBuk = {
-    id: `BUK-${Date.now().toString().slice(-4)}`,
-    vacancy_id: body.vacanteId,
-    nombre: body.nombreCompleto,
-    email: body.email,
-    telefono: body.telefono,
-    cv_url: body.enlaceCv,
-    perfil_linkedin: body.perfilLinkedin,
-    estado: "Pendiente / En espera", // El estado que mencionaste al inicio
-    fecha_postlucion: new Date().toISOString()
+    id: `BUK-AP-${Date.now().toString().slice(-4)}`,
+    vacancy_id: vacanteId,
+    nombres: nombres,
+    apellidos: apellidos,
+    email: email,
+    telefono: telefono,
+    pais: pais,
+    ciudad: ciudad,
+    cv_url: cvUrl,
+    perfil_linkedin: perfilLinkedin,
+    fuente_origen: "LinkedIn (Importadores Curriculum)",
+    estado: "Pendiente / En espera",
+    fecha_postulacion: new Date().toISOString()
 };
 
-// 2. "Guardar" en el ATS simulado de BUK
-postulantesEnBuk.unshift(nuevoCandidatoBuk); // Lo agrega al inicio de la lista
+// Guardar en la Mock API en memoria
+postulantesEnBuk.unshift(nuevoCandidatoBuk);
 
 return NextResponse.json(
     {
     success: true,
-    message: "¡Postulación recibida por el middleware y registrada con éxito en el ATS BUK (Mock)!",
+    message: "¡Postulación procesada con éxito bajo el contrato Mock de BUK!",
     candidatoRegistrado: nuevoCandidatoBuk
     },
     { status: 201 }
@@ -46,7 +60,7 @@ return NextResponse.json(
 
 } catch (error) {
 return NextResponse.json(
-    { success: false, message: "Error en el servidor middleware" },
+    { success: false, message: "Error interno en la servidor middleware" },
     { status: 500 }
 );
 }
