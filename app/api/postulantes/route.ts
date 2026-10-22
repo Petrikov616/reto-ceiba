@@ -28,8 +28,6 @@ if (!email) {
     { status: 400 }
     );
 }
-
-// Objeto estructurado bajo el contrato BUK
 const nuevoCandidatoBuk = {
     id: `BUK-AP-${Date.now().toString().slice(-4)}`,
     vacancy_id: vacanteId,
@@ -42,10 +40,9 @@ const nuevoCandidatoBuk = {
     cv_url: cvUrl,
     perfil_linkedin: perfilLinkedin,
     fuente_origen: "LinkedIn (Importadores Curriculum)",
-    estado: "Pendiente / En espera",
+    estado: "postulantes", // <--- CAMBIADO: Debe coincidir con el ID de la primera columna del Kanban
     fecha_postulacion: new Date().toISOString()
 };
-
 // Guardar en la Mock API en memoria
 postulantesEnBuk.unshift(nuevoCandidatoBuk);
 
