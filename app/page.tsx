@@ -5,33 +5,50 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-slate-900 text-slate-100 p-8 flex flex-col items-center">
-      <div className="max-w-7xl w-full">
-        
-        {/* Cabecera del Panel BUK ATS */}
-        <header className="mb-6 border-b border-slate-800 pb-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold text-emerald-400 flex items-center gap-2">
-              <span className="bg-emerald-600 text-white px-2 py-0.5 rounded text-xs">BUK</span>
-              Panel ATS - Ceiba
-            </h1>
-            <p className="text-xs text-slate-400">
-              Gestión y seguimiento de postulantes en tiempo real
-            </p>
+    <main className="flex-1 bg-[#F8FAFC] text-buk-text">
+      {/* Top bar con search y usuario */}
+      <div className="bg-white border-b border-buk-border px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="relative">
           </div>
+        </div>
+        <div className="flex items-center gap-3">
+        </div>
+      </div>
 
-          {/* Enlace para ir al Simulador */}
+      {/* Header del proceso de selección */}
+      <div className="px-6 py-4 bg-white border-b border-buk-border">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+            </div>
+            <h1 className="text-lg font-bold text-buk-text flex items-center gap-2.5">
+              Practicantes en Contratación Pública
+            </h1>
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+          </div>
+        </div>
+      </div>
+
+      <div className="px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+        </div>
+        <div className="flex items-center gap-2">
           <Link
             href={ROUTES.SIMULADOR}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3.5 py-2 rounded-lg transition shadow-md flex items-center gap-2 font-medium"
+            className="bg-buk-success hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-lg transition shadow-sm font-semibold flex items-center gap-1.5"
           >
-            Ir al Simulador LinkedIn →
+            Nueva postulación →
           </Link>
-        </header>
+        </div>
+      </div>
 
-        {/* Tablero Kanban principal */}
+      {/* Tablero Kanban */}
+      <div className="px-6 pb-6">
         <KanbanBoard />
-
       </div>
     </main>
   );

@@ -2,6 +2,7 @@
 import { ROUTES } from "@/app/constants/routes";
 import { useState, ChangeEvent } from 'react';
 import Link from 'next/link';
+import { showToast } from '@/app/components/Toast';
 
 interface FormData {
     nombres: string;
@@ -62,7 +63,6 @@ export default function SimuladorLinkedin() {
         setFormData(updatedForm);
     };
 
-    // Maneja cuando seleccionas manualmente el país desde el menú desplegable
     const handleCountryChange = (e: ChangeEvent<HTMLSelectElement>) => {
         const paisSeleccionado = e.target.value;
         const encontrado = paisesCeiba.find(p => p.nombre === paisSeleccionado);
@@ -77,156 +77,224 @@ export default function SimuladorLinkedin() {
     const handleSubmit = async () => {
         setMensajeExito(null);
 
-        if( !formData.nombres.trim() || ! formData.apellidos.trim() ) {
-            alert('!Campo obligatorio! Debes de ingresar tu nombre y apellidos completos');
+        if (!formData.nombres.trim() || !formData.apellidos.trim()) {
+            showToast('warning', '¡Campo obligatorio! Debes ingresar tu nombre y apellidos completos');
             return;
         }
 
-        if(!formData.email.trim()) {
-            alert('El correo electrónica es obligatorio');
+        if (!formData.email.trim()) {
+            showToast('warning', 'El correo electrónico es obligatorio');
             return;
         }
 
-        if(!formData.enlaceCv || formData.enlaceCv.trim() === '') {
-            alert('!Campo obligatorio! Debes de ingresar la URL de la CV en PDF')
+        if (!formData.enlaceCv || formData.enlaceCv.trim() === '') {
+            showToast('warning', '¡Campo obligatorio! Debes ingresar la URL de la CV en PDF');
             return;
         }
 
-        if( !formData.perfilLinkedin || formData.perfilLinkedin.trim() === '') {
-            alert('!Campo obligatorio! Debes de ingresar la URL de tu perfil de LinkedIn')
+        if (!formData.perfilLinkedin || formData.perfilLinkedin.trim() === '') {
+            showToast('warning', '¡Campo obligatorio! Debes ingresar la URL de tu perfil de LinkedIn');
             return;
         }
 
         setLoading(true);
 
         try {
-        const resCheck = await fetch('/api/postulantes');
-        if (resCheck.ok) {
-            const dataCheck = await resCheck.json();
-            const existeCorreo = Array.isArray(dataCheck.postulantes) && dataCheck.postulantes.some(
-                (p: { email?: string }) => p.email?.toLowerCase().trim() === formData.email.toLowerCase().trim()
-            );
+            const resCheck = await fetch('/api/postulantes');
+            if (resCheck.ok) {
+                const dataCheck = await resCheck.json();
+                const existeCorreo = Array.isArray(dataCheck.postulantes) && dataCheck.postulantes.some(
+                    (p: { email?: string }) => p.email?.toLowerCase().trim() === formData.email.toLowerCase().trim()
+                );
 
-            if (existeCorreo) {
-                alert(` El correo "${formData.email}" ya está registrado en el sistema BUK ATS. Debe ser único.`);
-                setLoading(false);
-                return;
+                if (existeCorreo) {
+                    showToast('error', `El correo "${formData.email}" ya está registrado en el sistema BUK ATS. Debe ser único.`);
+                    setLoading(false);
+                    return;
+                }
             }
-        }
 
-        // 3. Envío de la postulación
-        const res = await fetch('/api/postulantes', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-        });
+            const res = await fetch('/api/postulantes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
 
-        const data = await res.json();
-        
-        if (res.ok) {
-            setMensajeExito(`¡Postulación de ${formData.nombres} ${formData.apellidos} enviada automáticamente a BUK!`);
-            setFormData(initialFormData); 
-        } else {
-            alert(data.message || 'Error al enviar la postulación');
+            const data = await res.json();
+
+            if (res.ok) {
+                setMensajeExito(`¡Postulación de ${formData.nombres} ${formData.apellidos} enviada automáticamente a BUK!`);
+                showToast('success', `¡Postulación de ${formData.nombres} ${formData.apellidos} enviada correctamente!`);
+                setFormData(initialFormData);
+            } else {
+                showToast('error', data.message || 'Error al enviar la postulación');
+            }
+        } catch (error) {
+            showToast('error', 'Error de conexión con el middleware');
+        } finally {
+            setLoading(false);
         }
-    } catch (error) {
-        alert('Error de conexión con el middleware');
-    } finally {
-        setLoading(false);
-    }
-};
+    };
+
+    const inputClasses = "w-full bg-white border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-buk-text focus:outline-none focus:border-buk-primary focus:ring-2 focus:ring-buk-primary/10 transition placeholder:text-gray-400";
+    const labelClasses = "block text-xs font-semibold text-buk-text-secondary mb-1.5 uppercase tracking-wider";
 
     return (
-        <main className="min-h-screen bg-slate-900 text-slate-100 p-8 flex flex-col items-center">
-            <div className="max-w-2xl w-full">
-                <header className="mb-6 border-b border-slate-800 pb-4 flex justify-between items-center">
-                    <div>
-                        <h1 className="text-xl font-bold text-blue-400 flex items-center gap-2">
-                            <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs">in</span>
-                            Simulador de Webhook / Postulación LinkedIn
-                        </h1>
-                        <p className="text-xs text-slate-400">
-                            Genera el evento JSON de origen que procesa el Middleware
-                        </p>
+        <main className="flex-1 bg-[#F8FAFC] text-buk-text">
+            {/* Top bar */}
+            <div className="bg-white border-b border-buk-border px-6 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="relative">
                     </div>
+                </div>
+                <div className="flex items-center gap-3">
+                </div>
+            </div>
 
+            {/* Breadcrumb + título */}
+            <div className="px-6 py-4 bg-white border-b border-buk-border">
+                <div className="flex items-center gap-2 mb-2 text-sm text-buk-text-secondary">
+                    <Link href={ROUTES.ATS_BUK} className="hover:text-buk-primary transition">
+                        Selección
+                    </Link>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2">
+                        <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                    <span className="text-buk-text font-medium">Simulador de Postulación</span>
+                </div>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#0A66C2] flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                            in
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold text-buk-text">
+                                Simulador de Webhook / Postulación LinkedIn
+                            </h1>
+                            <p className="text-xs text-buk-text-secondary">
+                                Genera el evento JSON de origen que procesa el Middleware → BUK ATS
+                            </p>
+                        </div>
+                    </div>
                     <Link
                         href={ROUTES.ATS_BUK}
-                        className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs px-3.5 py-2 rounded-lg transition">
-                        ← Volver al BUK ATS
+                        className="border border-buk-border text-buk-text-secondary text-xs px-4 py-2 rounded-lg hover:bg-gray-50 transition font-medium flex items-center gap-1.5"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="m15 18-6-6 6-6" />
+                        </svg>
+                        Volver al Panel ATS
                     </Link>
-                </header>
+                </div>
+            </div>
 
-                <section className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+            {/* Formulario */}
+            <div className="px-6 py-6 max-w-2xl mx-auto">
+                <div className="bg-white p-6 rounded-2xl border border-buk-border shadow-sm">
+                    {/* Indicador de flujo */}
+                    <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-[#0A66C2] flex items-center justify-center text-white text-[10px] font-bold">in</div>
+                            <span className="text-xs text-buk-text-secondary">LinkedIn</span>
+                        </div>
+                        <div className="flex-1 h-px bg-gray-200 relative">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2">
+                                    <path d="M5 12h14" />
+                                    <path d="m12 5 7 7-7 7" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-buk-text-secondary">Middleware</span>
+                        </div>
+                        <div className="flex-1 h-px bg-gray-200 relative">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2">
+                                    <path d="M5 12h14" />
+                                    <path d="m12 5 7 7-7 7" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-buk-success flex items-center justify-center text-white text-[10px] font-bold">B</div>
+                            <span className="text-xs text-buk-text-secondary">BUK ATS</span>
+                        </div>
+                    </div>
+
                     <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1">Nombres *</label>
+                                <label className={labelClasses}>Nombres *</label>
                                 <input
                                     type="text"
                                     name="nombres"
                                     value={formData.nombres}
                                     onChange={handleChange}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white"
+                                    placeholder="Ej: Juan Carlos"
+                                    className={inputClasses}
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1">Apellidos *</label>
+                                <label className={labelClasses}>Apellidos *</label>
                                 <input
                                     type="text"
                                     name="apellidos"
                                     value={formData.apellidos}
                                     onChange={handleChange}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white"
+                                    placeholder="Ej: Pérez García"
+                                    className={inputClasses}
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Correo Electrónico (Llave única) *</label>
+                            <label className={labelClasses}>Correo Electrónico (Llave única) *</label>
                             <input
                                 type="email"
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white"
+                                placeholder="correo@ejemplo.com"
+                                className={inputClasses}
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1">Celular *</label>
+                                <label className={labelClasses}>Celular *</label>
                                 <input
                                     type="text"
                                     name="telefono"
                                     value={formData.telefono}
                                     onChange={handleChange}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white"
+                                    placeholder="+57 300 000 0000"
+                                    className={inputClasses}
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1">ID Vacante (BUK) *</label>
+                                <label className={labelClasses}>ID Vacante (BUK) *</label>
                                 <input
                                     type="text"
                                     name="vacanteId"
                                     value={formData.vacanteId}
                                     onChange={handleChange}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white"
+                                    className={inputClasses}
                                 />
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1">País *</label>
+                                <label className={labelClasses}>País *</label>
                                 <select
                                     name="pais"
                                     value={formData.pais}
                                     onChange={handleCountryChange}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white cursor-pointer"
+                                    className={`${inputClasses} cursor-pointer`}
                                 >
                                     {paisesCeiba.map((p) => (
-                                        <option key={p.nombre} value={p.nombre} className="bg-slate-900 text-white">
+                                        <option key={p.nombre} value={p.nombre}>
                                             {p.nombre} ({p.codigo})
                                         </option>
                                     ))}
@@ -234,36 +302,39 @@ export default function SimuladorLinkedin() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 mb-1">Ciudad *</label>
+                                <label className={labelClasses}>Ciudad *</label>
                                 <input
                                     type="text"
                                     name="ciudad"
                                     value={formData.ciudad}
                                     onChange={handleChange}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white"
+                                    placeholder="Ej: Medellín"
+                                    className={inputClasses}
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">URL del CV en PDF *</label>
+                            <label className={labelClasses}>URL del CV en PDF *</label>
                             <input
                                 type="url"
                                 name="enlaceCv"
                                 value={formData.enlaceCv}
                                 onChange={handleChange}
-                                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white"
+                                placeholder="https://ejemplo.com/mi-cv.pdf"
+                                className={inputClasses}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Perfil de LinkedIn</label>
+                            <label className={labelClasses}>Perfil de LinkedIn *</label>
                             <input
                                 type="url"
                                 name="perfilLinkedin"
                                 value={formData.perfilLinkedin}
                                 onChange={handleChange}
-                                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white"
+                                placeholder="https://linkedin.com/in/mi-perfil"
+                                className={inputClasses}
                             />
                         </div>
 
@@ -271,21 +342,43 @@ export default function SimuladorLinkedin() {
                             type="button"
                             onClick={handleSubmit}
                             disabled={loading}
-                            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-medium py-2.5 px-4 rounded-lg transition text-sm shadow-md mt-4"
+                            className="w-full bg-buk-primary hover:bg-buk-primary-dark disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition text-sm shadow-sm mt-2 flex items-center justify-center gap-2"
                         >
-                            {loading ? 'Enviando a BUK por Middleware...' : ' Simular Clic de Postulación en LinkedIn'}
+                            {loading ? (
+                                <>
+                                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    Enviando a BUK por Middleware...
+                                </>
+                            ) : (
+                                <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M5 12h14" />
+                                        <path d="m12 5 7 7-7 7" />
+                                    </svg>
+                                    Simular Clic de Postulación en LinkedIn
+                                </>
+                            )}
                         </button>
 
                         {mensajeExito && (
-                            <div className="mt-4 bg-emerald-950 border border-emerald-700 text-emerald-300 p-3 rounded-lg text-xs flex justify-between items-center">
-                                <span>{mensajeExito}</span>
-                                <Link href={ROUTES.ATS_BUK} className="underline font-bold text-white ml-2">
+                            <div className="mt-3 bg-emerald-50 border border-emerald-200 text-emerald-700 p-4 rounded-xl text-sm flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                        <polyline points="22 4 12 14.01 9 11.01" />
+                                    </svg>
+                                    <span>{mensajeExito}</span>
+                                </div>
+                                <Link href={ROUTES.ATS_BUK} className="text-buk-primary font-bold text-xs hover:underline ml-3 whitespace-nowrap">
                                     Ver en BUK ATS →
                                 </Link>
                             </div>
                         )}
                     </div>
-                </section>
+                </div>
             </div>
         </main>
     );
