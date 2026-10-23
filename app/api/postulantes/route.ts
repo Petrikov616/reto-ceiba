@@ -3,62 +3,124 @@ import { NextResponse } from 'next/server';
 let postulantesEnBuk: any[] = [];
 
 export async function GET() {
-return NextResponse.json({ success: true, postulantes: postulantesEnBuk });
+    return NextResponse.json({ success: true, postulantes: postulantesEnBuk });
 }
 
 export async function POST(request: Request) {
-try {
-const body = await request.json();
+    try {
+        const body = await request.json();
 
-// Extraer campos con valores por defecto si vienen vacíos
-const nombres = body.nombres || 'Candidato';
-const apellidos = body.apellidos || 'Sin Apellido';
-const email = body.email;
-const telefono = body.telefono || body.celular || 'Sin número';
-const vacanteId = body.vacanteId || 'VAC-01';
-const pais = body.pais || 'Colombia';
-const ciudad = body.ciudad || 'Medellín';
-const cvUrl = body.enlaceCv || body.cv_url || 'https://ejemplo.com/cv.pdf';
-const perfilLinkedin = body.perfilLinkedin || 'No proporcionado';
+        // Extraer campos con valores por defecto si vienen vacíos
+        const nombres = body.nombres || 'Candidato';
+        const apellidos = body.apellidos || 'Sin Apellido';
+        const email = body.email;
+        const telefono = body.telefono || body.celular || 'Sin número';
+        const vacanteId = body.vacanteId || 'VAC-01';
+        const pais = body.pais || 'Colombia';
+        const ciudad = body.ciudad || 'Medellín';
+        const cvUrl = body.enlaceCv || body.cv_url || 'https://ejemplo.com/cv.pdf';
+        const perfilLinkedin = body.perfilLinkedin || 'No proporcionado';
 
-// La única validación estricta será el correo
-if (!email) {
-    return NextResponse.json(
-    { success: false, message: 'El correo electrónico es obligatorio (llave única)' },
-    { status: 400 }
-    );
+        // Validar que el correo sea obligatorio
+        if (!email) {
+            return NextResponse.json(
+                { success: false, message: 'El correo electrónico es obligatorio (llave única)' },
+                { status: 400 }
+            );
+        }
+
+        const correoNormalizado = email.toLowerCase().trim();
+        const existeCorreo = postulantesEnBuk.some(
+            (p) => p.email && p.email.toLowerCase().trim() === correoNormalizado
+        );
+
+        if (existeCorreo) {
+            return NextResponse.json(
+                { success: false, message: '⚠️ Ya existe un postulante registrado con este correo electrónico en el sistema.' },
+                { status: 409 } // Código 409: Conflicto por duplicidad
+            );
+        }
+
+        const telefonoLimpio = telefono.trim();
+        const exiteTelefono = postulantesEnBuk.some(
+            (p) => p.telefono && p.telefono.trim() === telefonoLimpio
+        );
+
+        if (exiteTelefono) {
+            return NextResponse.json(
+                {success: false, message: ' Ya existe un postulante registrado con este telefono en el sistema.'},
+                {status: 409}
+            );
+        }
+
+        const nuevoCandidatoBuk = {
+            id: `BUK-AP-${Date.now().toString().slice(-4)}`,
+            vacancy_id: vacanteId,
+            nombres: nombres,
+            apellidos: apellidos,
+            email: email,
+            telefono: telefono,
+            pais: pais,
+            ciudad: ciudad,
+            cv_url: cvUrl,
+            perfil_linkedin: perfilLinkedin,
+            fuente_origen: "LinkedIn (Importadores Curriculum)",
+            estado: "postulantes", // Coincide con el ID de la primera columna del Kanban
+            fecha_postulacion: new Date().toISOString()
+        };
+
+        // Guardar en la Mock API en memoria
+        postulantesEnBuk.unshift(nuevoCandidatoBuk);
+
+        return NextResponse.json(
+            {
+                success: true,
+                message: "¡Postulación procesada con éxito bajo el contrato Mock de BUK!",
+                candidatoRegistrado: nuevoCandidatoBuk
+            },
+            { status: 201 }
+        );
+
+    } catch (error) {
+        return NextResponse.json(
+            { success: false, message: "Error interno en el servidor middleware" },
+            { status: 500 }
+        );
+    }
 }
-const nuevoCandidatoBuk = {
-    id: `BUK-AP-${Date.now().toString().slice(-4)}`,
-    vacancy_id: vacanteId,
-    nombres: nombres,
-    apellidos: apellidos,
-    email: email,
-    telefono: telefono,
-    pais: pais,
-    ciudad: ciudad,
-    cv_url: cvUrl,
-    perfil_linkedin: perfilLinkedin,
-    fuente_origen: "LinkedIn (Importadores Curriculum)",
-    estado: "postulantes", // <--- CAMBIADO: Debe coincidir con el ID de la primera columna del Kanban
-    fecha_postulacion: new Date().toISOString()
-};
-// Guardar en la Mock API en memoria
-postulantesEnBuk.unshift(nuevoCandidatoBuk);
 
-return NextResponse.json(
-    {
-    success: true,
-    message: "¡Postulación procesada con éxito bajo el contrato Mock de BUK!",
-    candidatoRegistrado: nuevoCandidatoBuk
-    },
-    { status: 201 }
-);
+// 🔄 NUEVO: Método PUT para actualizar el estado del candidato en el tablero Kanban
+export async function PUT(request: Request) {
+    try {
+        const body = await request.json();
+        const { id, nuevoEstado } = body;
 
-} catch (error) {
-return NextResponse.json(
-    { success: false, message: "Error interno en la servidor middleware" },
-    { status: 500 }
-);
-}
+        if (!id || !nuevoEstado) {
+            return NextResponse.json(
+                { success: false, message: 'Faltan parámetros obligatorios (id o nuevoEstado)' },
+                { status: 400 }
+            );
+        }
+
+        const candidatoIndex = postulantesEnBuk.findIndex((c) => c.id === id);
+
+        if (candidatoIndex !== -1) {
+            postulantesEnBuk[candidatoIndex].estado = nuevoEstado;
+            return NextResponse.json({
+                success: true,
+                message: 'Estado del candidato actualizado correctamente en BUK',
+                candidato: postulantesEnBuk[candidatoIndex]
+            });
+        }
+
+        return NextResponse.json(
+            { success: false, message: 'Candidato no encontrado en el sistema' },
+            { status: 404 }
+        );
+    } catch (error) {
+        return NextResponse.json(
+            { success: false, message: 'Error interno al actualizar el estado' },
+            { status: 500 }
+        );
+    }
 }

@@ -45,13 +45,24 @@ export default function SimuladorLinkedin() {
     const [mensajeExito, setMensajeExito] = useState<string | null>(null);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        const { name, value } = e.target;
+        let updatedForm = { ...formData, [name]: value };
+
+        if (name === 'telefono') {
+            const paisEncontrado = paisesCeiba
+                .slice()
+                .sort((a, b) => b.codigo.length - a.codigo.length)
+                .find(p => value.trim().startsWith(p.codigo));
+
+            if (paisEncontrado) {
+                updatedForm.pais = paisEncontrado.nombre;
+            }
+        }
+
+        setFormData(updatedForm);
     };
 
-    // 👉 1. Función para manejar el cambio de país y actualizar el código del celular
+    // Maneja cuando seleccionas manualmente el país desde el menú desplegable
     const handleCountryChange = (e: ChangeEvent<HTMLSelectElement>) => {
         const paisSeleccionado = e.target.value;
         const encontrado = paisesCeiba.find(p => p.nombre === paisSeleccionado);
@@ -64,29 +75,66 @@ export default function SimuladorLinkedin() {
     };
 
     const handleSubmit = async () => {
-        setLoading(true);
         setMensajeExito(null);
 
-        try {
-            const res = await fetch('/api/postulantes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                setMensajeExito(`¡Postulación de ${formData.nombres} ${formData.apellidos} enviada automáticamente a BUK!`);
-                setFormData(initialFormData); 
-            } else {
-                alert(data.message || 'Error al enviar la postulación');
-            }
-        } catch (error) {
-            alert('Error de conexión con el middleware');
-        } finally {
-            setLoading(false);
+        if( !formData.nombres.trim() || ! formData.apellidos.trim() ) {
+            alert('!Campo obligatorio! Debes de ingresar tu nombre y apellidos completos');
+            return;
         }
-    };
+
+        if(!formData.email.trim()) {
+            alert('El correo electrónica es obligatorio');
+            return;
+        }
+
+        if(!formData.enlaceCv || formData.enlaceCv.trim() === '') {
+            alert('!Campo obligatorio! Debes de ingresar la URL de la CV en PDF')
+            return;
+        }
+
+        if( !formData.perfilLinkedin || formData.perfilLinkedin.trim() === '') {
+            alert('!Campo obligatorio! Debes de ingresar la URL de tu perfil de LinkedIn')
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+        const resCheck = await fetch('/api/postulantes');
+        if (resCheck.ok) {
+            const dataCheck = await resCheck.json();
+            const existeCorreo = Array.isArray(dataCheck.postulantes) && dataCheck.postulantes.some(
+                (p: { email?: string }) => p.email?.toLowerCase().trim() === formData.email.toLowerCase().trim()
+            );
+
+            if (existeCorreo) {
+                alert(` El correo "${formData.email}" ya está registrado en el sistema BUK ATS. Debe ser único.`);
+                setLoading(false);
+                return;
+            }
+        }
+
+        // 3. Envío de la postulación
+        const res = await fetch('/api/postulantes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await res.json();
+        
+        if (res.ok) {
+            setMensajeExito(`¡Postulación de ${formData.nombres} ${formData.apellidos} enviada automáticamente a BUK!`);
+            setFormData(initialFormData); 
+        } else {
+            alert(data.message || 'Error al enviar la postulación');
+        }
+    } catch (error) {
+        alert('Error de conexión con el middleware');
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <main className="min-h-screen bg-slate-900 text-slate-100 p-8 flex flex-col items-center">
@@ -169,7 +217,6 @@ export default function SimuladorLinkedin() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
-                            {/* 👉 2. Menú desplegable (<select>) corregido con las opciones de Ceiba */}
                             <div>
                                 <label className="block text-xs font-medium text-slate-400 mb-1">País *</label>
                                 <select

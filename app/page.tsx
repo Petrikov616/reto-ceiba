@@ -1,4 +1,4 @@
-// app/page.tsx
+
 import { ROUTES } from "@/app/constants/routes";
 import KanbanBoard from "@/app/components/KanbanBoard";
 import Link from "next/link";
@@ -20,7 +20,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Enlace para ir al Simulador que creamos antes */}
+          {/* Enlace para ir al Simulador */}
           <Link
             href={ROUTES.SIMULADOR}
             className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3.5 py-2 rounded-lg transition shadow-md flex items-center gap-2 font-medium"
@@ -29,7 +29,7 @@ export default function Home() {
           </Link>
         </header>
 
-        {/* Aquí insertas tu tablero Kanban */}
+        {/* Tablero Kanban principal */}
         <KanbanBoard />
 
       </div>
