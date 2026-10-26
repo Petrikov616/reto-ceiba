@@ -126,14 +126,13 @@ export default function KanbanBoard() {
         if (!id) return;
         await actualizarEstadoCandidato(id, targetEstado);
     };
-
     return (
         <div className="w-full relative">
             <div className="w-full flex justify-center gap-3 overflow-x-auto pb-2">
                 {etapas.map((etapa) => {
-                    const postulantesColumna = Array.isArray(postulantes)
-                        ? postulantes.filter(p => (p.estado || 'postulantes') === etapa.id)
-                        : [];
+const postulantesColumna = Array.isArray(postulantes)
+? postulantes.filter(p => p.estado === etapa.id)
+: [];
                     const isDescartadosOpen = descartadosAbiertos[etapa.id] || false;
 
                     return (
@@ -217,131 +216,133 @@ export default function KanbanBoard() {
             </div>
 
             {/* Modal de Detalle */}
-            {postulanteSeleccionado && (
-                <div
-                    className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-50 flex items-center justify-center p-4"
-                    onClick={(e) => { if (e.target === e.currentTarget) setPostulanteSeleccionado(null); }}
-                >
-                    <div className="bg-white border border-buk-border w-full max-w-md rounded-2xl shadow-2xl relative overflow-hidden">
-                        {/* Header del modal con color */}
-                        <div className="bg-gradient-to-r from-buk-primary to-blue-500 px-6 pt-6 pb-10">
-                            <button
-                                onClick={() => setPostulanteSeleccionado(null)}
-                                className="absolute top-4 right-4 text-white/70 hover:text-white text-lg font-bold transition bg-white/10 rounded-full w-7 h-7 flex items-center justify-center"
-                            >
-                                ✕
-                            </button>
-                            <span className="text-[10px] bg-white/20 text-white px-2.5 py-0.5 rounded-full font-mono uppercase">
-                                {postulanteSeleccionado.vacancy_id || postulanteSeleccionado.vacanteId || 'VAC-3924'}
-                            </span>
-                        </div>
-
-                        {/* Avatar sobre el header */}
-                        <div className="px-6 -mt-8 relative z-10">
-                            <div className={`w-16 h-16 rounded-full ${getAvatarColor(postulanteSeleccionado.nombres)} flex items-center justify-center text-white text-xl font-bold border-4 border-white shadow-lg`}>
-                                {getInitials(postulanteSeleccionado.nombres, postulanteSeleccionado.apellidos)}
-                            </div>
-                        </div>
-
-                        {/* Info del candidato */}
-                        <div className="px-6 pt-3 pb-6 space-y-4">
-                            <div>
-                                <h2 className="text-xl font-bold text-buk-text">
-                                    {postulanteSeleccionado.nombres} {postulanteSeleccionado.apellidos || ''}
-                                </h2>
-                                <p className="text-sm text-buk-text-secondary flex items-center gap-1.5 mt-0.5">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                                        <circle cx="12" cy="10" r="3" />
-                                    </svg>
-                                    {postulanteSeleccionado.ciudad || 'Medellín'}, {postulanteSeleccionado.pais || 'Colombia'}
-                                </p>
+            {
+                postulanteSeleccionado && (
+                    <div
+                        className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-50 flex items-center justify-center p-4"
+                        onClick={(e) => { if (e.target === e.currentTarget) setPostulanteSeleccionado(null); }}
+                    >
+                        <div className="bg-white border border-buk-border w-full max-w-md rounded-2xl shadow-2xl relative overflow-hidden">
+                            {/* Header del modal con color */}
+                            <div className="bg-gradient-to-r from-buk-primary to-blue-500 px-6 pt-6 pb-10">
+                                <button
+                                    onClick={() => setPostulanteSeleccionado(null)}
+                                    className="absolute top-4 right-4 text-white/70 hover:text-white text-lg font-bold transition bg-white/10 rounded-full w-7 h-7 flex items-center justify-center"
+                                >
+                                    ✕
+                                </button>
+                                <span className="text-[10px] bg-white/20 text-white px-2.5 py-0.5 rounded-full font-mono uppercase">
+                                    {postulanteSeleccionado.vacancy_id || postulanteSeleccionado.vacanteId || 'VAC-3924'}
+                                </span>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-gray-50 rounded-lg p-3">
-                                    <span className="text-[10px] text-buk-text-secondary uppercase tracking-wider font-semibold block mb-1">Correo</span>
-                                    <span className="text-xs text-buk-text font-medium break-all">{postulanteSeleccionado.email || 'No especificado'}</span>
-                                </div>
-                                <div className="bg-gray-50 rounded-lg p-3">
-                                    <span className="text-[10px] text-buk-text-secondary uppercase tracking-wider font-semibold block mb-1">Teléfono</span>
-                                    <span className="text-xs text-buk-text font-medium">{postulanteSeleccionado.telefono || 'No especificado'}</span>
+                            {/* Avatar sobre el header */}
+                            <div className="px-6 -mt-8 relative z-10">
+                                <div className={`w-16 h-16 rounded-full ${getAvatarColor(postulanteSeleccionado.nombres)} flex items-center justify-center text-white text-xl font-bold border-4 border-white shadow-lg`}>
+                                    {getInitials(postulanteSeleccionado.nombres, postulanteSeleccionado.apellidos)}
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-2 pt-1">
-                                {(postulanteSeleccionado.cv_url || postulanteSeleccionado.enlaceCv) && (
-                                    <a
-                                        href={postulanteSeleccionado.cv_url || postulanteSeleccionado.enlaceCv}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="w-full bg-gray-50 hover:bg-gray-100 text-buk-text text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition font-medium border border-buk-border"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                                            <polyline points="14 2 14 8 20 8" />
+                            {/* Info del candidato */}
+                            <div className="px-6 pt-3 pb-6 space-y-4">
+                                <div>
+                                    <h2 className="text-xl font-bold text-buk-text">
+                                        {postulanteSeleccionado.nombres} {postulanteSeleccionado.apellidos || ''}
+                                    </h2>
+                                    <p className="text-sm text-buk-text-secondary flex items-center gap-1.5 mt-0.5">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                                            <circle cx="12" cy="10" r="3" />
                                         </svg>
-                                        Ver Hoja de Vida (PDF)
-                                    </a>
-                                )}
+                                        {postulanteSeleccionado.ciudad || 'Medellín'}, {postulanteSeleccionado.pais || 'Colombia'}
+                                    </p>
+                                </div>
 
-                                {(postulanteSeleccionado.perfil_linkedin || postulanteSeleccionado.perfilLinkedin) && (
-                                    <a
-                                        href={postulanteSeleccionado.perfil_linkedin || postulanteSeleccionado.perfilLinkedin}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="w-full bg-[#0A66C2] hover:bg-[#004182] text-white text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition font-medium shadow-sm"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-                                            <rect x="2" y="9" width="4" height="12" />
-                                            <circle cx="4" cy="4" r="2" />
-                                        </svg>
-                                        Ver Perfil de LinkedIn
-                                    </a>
-                                )}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-gray-50 rounded-lg p-3">
+                                        <span className="text-[10px] text-buk-text-secondary uppercase tracking-wider font-semibold block mb-1">Correo</span>
+                                        <span className="text-xs text-buk-text font-medium break-all">{postulanteSeleccionado.email || 'No especificado'}</span>
+                                    </div>
+                                    <div className="bg-gray-50 rounded-lg p-3">
+                                        <span className="text-[10px] text-buk-text-secondary uppercase tracking-wider font-semibold block mb-1">Teléfono</span>
+                                        <span className="text-xs text-buk-text font-medium">{postulanteSeleccionado.telefono || 'No especificado'}</span>
+                                    </div>
+                                </div>
 
-                                {postulanteSeleccionado.estado === 'suspendido' ? (
-                                    <button
-                                        onClick={() => {
-                                            actualizarEstadoCandidato(postulanteSeleccionado.id, 'contactar');
-                                            setPostulanteSeleccionado(null);
-                                            showToast('success', `${postulanteSeleccionado.nombres} ha sido reactivado exitosamente`);
-                                        }}
-                                        className="w-full mt-1 bg-buk-success hover:bg-emerald-700 text-white text-xs py-2.5 px-4 rounded-xl transition font-medium shadow-sm flex items-center justify-center gap-2"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M12 2a10 10 0 0 1 7.38 16.75" />
-                                            <path d="M12 8v8" />
-                                            <path d="M16 12H8" />
-                                            <path d="M2.5 8.875a10 10 0 0 0-.5 3" />
-                                            <path d="M2.83 16a10 10 0 0 0 2.43 3.4" />
-                                            <path d="M4.636 5.235a10 10 0 0 1 .891-.857" />
-                                            <path d="M8.644 21.42a10 10 0 0 0 7.631-.38" />
-                                        </svg>
-                                        Reactivar Postulante
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => {
-                                            actualizarEstadoCandidato(postulanteSeleccionado.id, 'suspendido');
-                                            setPostulanteSeleccionado(null);
-                                            showToast('warning', `${postulanteSeleccionado.nombres} ha sido suspendido`);
-                                        }}
-                                        className="w-full mt-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs py-2.5 px-4 rounded-xl transition font-medium flex items-center justify-center gap-2"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                                            <circle cx="12" cy="12" r="10" />
-                                            <line x1="9" x2="15" y1="15" y2="9" />
-                                        </svg>
-                                        Suspender Postulante
-                                    </button>
-                                )}
+                                <div className="flex flex-col gap-2 pt-1">
+                                    {(postulanteSeleccionado.cv_url || postulanteSeleccionado.enlaceCv) && (
+                                        <a
+                                            href={postulanteSeleccionado.cv_url || postulanteSeleccionado.enlaceCv}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-full bg-gray-50 hover:bg-gray-100 text-buk-text text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition font-medium border border-buk-border"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                                                <polyline points="14 2 14 8 20 8" />
+                                            </svg>
+                                            Ver Hoja de Vida (PDF)
+                                        </a>
+                                    )}
+
+                                    {(postulanteSeleccionado.perfil_linkedin || postulanteSeleccionado.perfilLinkedin) && (
+                                        <a
+                                            href={postulanteSeleccionado.perfil_linkedin || postulanteSeleccionado.perfilLinkedin}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-full bg-[#0A66C2] hover:bg-[#004182] text-white text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition font-medium shadow-sm"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                                                <rect x="2" y="9" width="4" height="12" />
+                                                <circle cx="4" cy="4" r="2" />
+                                            </svg>
+                                            Ver Perfil de LinkedIn
+                                        </a>
+                                    )}
+
+                                    {postulanteSeleccionado.estado === 'suspendido' ? (
+                                        <button
+                                            onClick={() => {
+                                                actualizarEstadoCandidato(postulanteSeleccionado.id, 'contactar');
+                                                setPostulanteSeleccionado(null);
+                                                showToast('success', `${postulanteSeleccionado.nombres} ha sido reactivado exitosamente`);
+                                            }}
+                                            className="w-full mt-1 bg-buk-success hover:bg-emerald-700 text-white text-xs py-2.5 px-4 rounded-xl transition font-medium shadow-sm flex items-center justify-center gap-2"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M12 2a10 10 0 0 1 7.38 16.75" />
+                                                <path d="M12 8v8" />
+                                                <path d="M16 12H8" />
+                                                <path d="M2.5 8.875a10 10 0 0 0-.5 3" />
+                                                <path d="M2.83 16a10 10 0 0 0 2.43 3.4" />
+                                                <path d="M4.636 5.235a10 10 0 0 1 .891-.857" />
+                                                <path d="M8.644 21.42a10 10 0 0 0 7.631-.38" />
+                                            </svg>
+                                            Reactivar Postulante
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => {
+                                                actualizarEstadoCandidato(postulanteSeleccionado.id, 'suspendido');
+                                                setPostulanteSeleccionado(null);
+                                                showToast('warning', `${postulanteSeleccionado.nombres} ha sido suspendido`);
+                                            }}
+                                            className="w-full mt-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs py-2.5 px-4 rounded-xl transition font-medium flex items-center justify-center gap-2"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <line x1="9" x2="15" y1="15" y2="9" />
+                                            </svg>
+                                            Suspender Postulante
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
